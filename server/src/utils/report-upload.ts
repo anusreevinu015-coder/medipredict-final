@@ -2,7 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import multer from 'multer';
-import { env } from '../config/env.js';
+
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -14,9 +14,7 @@ export const ALLOWED_MIME_TYPES = new Set([
   'image/png',
 ]);
 
-export const reportsDir = env.isProduction
-  ? path.join('/tmp', 'medipredict', 'reports')
-  : path.join(env.uploadsDir, 'reports');
+export const reportsDir = path.join('/tmp', 'medipredict', 'reports');
 
 fs.mkdirSync(reportsDir, { recursive: true });
 
