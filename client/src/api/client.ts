@@ -14,7 +14,9 @@ interface ApiResponse<T> {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, {
+ const apiBaseUrl = import.meta.env.VITE_API_URL ?? '';
+
+const response = await fetch(`${apiBaseUrl}${path}`, {
     credentials: 'include',
     headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
     ...options,
