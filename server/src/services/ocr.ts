@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { createWorker } from 'tesseract.js';
-import pdf from 'pdf-parse';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
+
 import type { ExtractedItem, ExtractionIndicator, ExtractionQuality } from '../types/auth.js';
 
 export interface ReportAnalysis {
@@ -22,11 +23,29 @@ const LOW_READABILITY_NOTE =
   'scan or photo of the report. Do not guess values — the AI will not use unconfirmed data.';
 
 async function extractPdfText(filePath: string): Promise<string | null> {
-  const buffer = await fs.promises.readFile(filePath);
-
   try {
-    const result = await pdf(buffer);
-    return result.text;
+    const buffer = await fs.promises.readFile(filePath);
+
+    const loadingTask = pdfjsLib.getDocument({
+  data: new Uint8Array(buffer),
+});
+    
+
+    const pdf = await loadingTask.promise;
+    const pages: string[] = [];
+
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+
+      const pageText = content.items
+        .map((item) => ('str' in item ? item.str : ''))
+        .join(' ');
+
+      pages.push(pageText);
+    }
+
+    return pages.join('\n');
   } catch {
     return null;
   }
