@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { createWorker } from 'tesseract.js';
-import { PDFParse } from 'pdf-parse';
+import pdf from 'pdf-parse';
 import type { ExtractedItem, ExtractionIndicator, ExtractionQuality } from '../types/auth.js';
 
 export interface ReportAnalysis {
@@ -23,14 +23,12 @@ const LOW_READABILITY_NOTE =
 
 async function extractPdfText(filePath: string): Promise<string | null> {
   const buffer = await fs.promises.readFile(filePath);
-  const parser = new PDFParse({ data: buffer });
+
   try {
-    const result = await parser.getText();
+    const result = await pdf(buffer);
     return result.text;
   } catch {
     return null;
-  } finally {
-    await parser.destroy().catch(() => undefined);
   }
 }
 
