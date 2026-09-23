@@ -14,7 +14,9 @@ export const ALLOWED_MIME_TYPES = new Set([
   'image/png',
 ]);
 
-export const reportsDir = path.join(env.uploadsDir, 'reports');
+export const reportsDir = env.isProduction
+  ? path.join('/tmp', 'medipredict', 'reports')
+  : path.join(env.uploadsDir, 'reports');
 
 fs.mkdirSync(reportsDir, { recursive: true });
 
