@@ -1710,3 +1710,105 @@ a.feature-card:hover {
   font-size: 0.82rem;
   margin: 0.15rem 0 0.5rem;
 }
+
+/* Location picker (patient hospital recommendations) */
+.location-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.location-picker label {
+  flex: 1 1 260px;
+}
+
+.location-geo-btn {
+  padding: 0.55rem 0.9rem;
+  font-size: 0.9rem;
+}
+
+.location-geo-msg {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+}
+
+/* Hospital type / demo badges */
+.badge-muted {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.hosp-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.hosp-doctor-toggle {
+  margin: 0.55rem 0 0.2rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.83rem;
+}
+
+.doctor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+/* Admin filters (hospitals + doctors directories) */
+.admin-filters {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.admin-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.admin-filter input,
+.admin-filter select {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: var(--font);
+  background: var(--color-bg);
+  min-width: 180px;
+}
+
+.admin-filter input:focus,
+.admin-filter select:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  background: #fff;
+}
+
+.admin-filter-count {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.admin-dept-collapsed-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+}
+
+.admin-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 1.2rem 0;
+}

@@ -15,6 +15,7 @@ import {
   editDepartment,
   editDoctor,
   editHospital,
+  listDoctorsAdmin,
   listHospitalsAdmin,
   removeDepartment,
   removeDoctor,
@@ -47,6 +48,10 @@ router.get('/hospitals', listHospitalsAdmin);
 router.post('/hospitals', addHospital);
 router.put('/hospitals/:id', editHospital);
 router.delete('/hospitals/:id', removeHospital);
+
+// Flat paginated doctor directory (the nested hospital tree is too large to
+// render as a doctor list).
+router.get('/doctors', listDoctorsAdmin);
 
 router.post('/hospitals/:id/departments', addDepartment);
 router.put('/hospitals/:id/departments/:departmentId', editDepartment);

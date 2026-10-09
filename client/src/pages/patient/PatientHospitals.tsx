@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { hospitalApi } from '../../api/hospital';
+import { LocationPicker, readStoredLocation } from '../../components/LocationPicker';
 import type { HospitalRecommendation } from '../../types/hospital';
 
 const DISCLAIMER =
@@ -21,11 +22,11 @@ function displaySpecialty(name: string): string {
 export function PatientHospitalsPage() {
   const [searchParams] = useSearchParams();
   const specialty = (searchParams.get('specialty') ?? '').trim();
-  const [city, setCity] = useState('all');
+  const [city, setCity] = useState(readStoredLocation);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hospitals, setHospitals] = useState<HospitalRecommendation[]>([]);
-  const [cities, setCities] = useState<string[]>([]);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const load = async (cityFilter: string) => {
     setLoading(true);
@@ -35,7 +36,7 @@ export function PatientHospitalsPage() {
       if (cityFilter && cityFilter !== 'all') params.location = cityFilter;
       const result = await hospitalApi.recommendations(params);
       setHospitals(result.hospitals);
-      setCities((prev) => Array.from(new Set([...prev, ...result.cities])).sort());
+      setExpanded(new Set());
     } catch (err) {
       setHospitals([]);
       setError(err instanceof Error ? err.message : 'Failed to load hospital recommendations.');
@@ -54,6 +55,22 @@ export function PatientHospitalsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [specialty, city]);
 
+  const toggleHospital = (hospitalId: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(hospitalId)) {
+        next.delete(hospitalId);
+      } else {
+        next.add(hospitalId);
+      }
+      return next;
+    });
+  };
+
+  const handleLocationChange = (nextCity: string) => {
+    setCity(nextCity);
+  };
+
   return (
     <div className="auth-wrap">
       <div className="auth-card hospitals-card">
@@ -63,25 +80,7 @@ export function PatientHospitalsPage() {
           <strong>{displaySpecialty(specialty)}</strong>.
         </p>
 
-        <div className="hosp-filter">
-          <label htmlFor="hosp-city">
-            City / District (Tamil Nadu)
-            <select
-              id="hosp-city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              disabled={loading || cities.length === 0}
-              data-testid="hospital-city"
-            >
-              <option value="all">All locations</option>
-              {cities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <LocationPicker value={city} onChange={handleLocationChange} disabled={loading} />
 
         {loading && (
           <div className="center-screen" role="status" aria-label="Loading hospitals">
@@ -100,61 +99,94 @@ export function PatientHospitalsPage() {
 
         {!loading &&
           !error &&
-          hospitals.map((hospital) => (
-            <div className="hosp-card" key={hospital.id} data-testid="hospital-card">
-              <div className="hosp-head">
-                <div className="hosp-title">
-                  <h3>{hospital.name}</h3>
-                  <p className="muted hosp-address">{hospital.address}</p>
-                  <p className="muted hosp-address">{displayLocation(hospital)}</p>
+          hospitals.map((hospital) => {
+            const isOpen = expanded.has(hospital.id);
+            return (
+              <div className="hosp-card" key={hospital.id} data-testid="hospital-card">
+                <div className="hosp-head">
+                  <div className="hosp-title">
+                    <h3>{hospital.name}</h3>
+                    <p className="muted hosp-address">{hospital.address}</p>
+                    <p className="muted hosp-address">{displayLocation(hospital)}</p>
+                  </div>
+                  <div className="hosp-badges">
+                    <span className="badge badge-info">{hospital.department.name}</span>
+                    {hospital.hospitalType && (
+                      <span className="badge badge-muted">{hospital.hospitalType}</span>
+                    )}
+                  </div>
+                  <Link
+                    to={`/patient/appointments?hospital=${hospital.id}&department=${hospital.department.id}`}
+                    className="btn btn-outline hosp-book"
+                    data-testid="hospital-book"
+                  >
+                    Book appointment
+                  </Link>
                 </div>
-                <span className="badge badge-info">{hospital.department.name}</span>
-                <Link
-                  to={`/patient/appointments?hospital=${hospital.id}&department=${hospital.department.id}`}
-                  className="btn btn-outline hosp-book"
-                  data-testid="hospital-book"
+
+                {hospital.phone && <p className="muted hosp-phone">Phone: {hospital.phone}</p>}
+                {hospital.availability && (
+                  <p className="muted hosp-phone">Availability: {hospital.availability}</p>
+                )}
+
+                <button
+                  type="button"
+                  className="btn btn-outline hosp-doctor-toggle"
+                  onClick={() => toggleHospital(hospital.id)}
+                  aria-expanded={isOpen}
+                  data-testid="hospital-doctors-toggle"
                 >
-                  Book appointment
-                </Link>
+                  {isOpen
+                    ? 'Hide doctors'
+                    : `Show doctors (${hospital.doctors.length})`}
+                </button>
+
+                {isOpen && (
+                  <>
+                    <h4 className="hosp-doctors-title">Doctors in this department</h4>
+                    {hospital.doctors.length === 0 ? (
+                      <p className="muted">
+                        No doctors are listed for this department yet — contact the hospital
+                        directly for details.
+                      </p>
+                    ) : (
+                      <ul className="doctor-list">
+                        {hospital.doctors.map((doctor) => (
+                          <li className="doctor-item" key={doctor.id}>
+                            <div className="doctor-meta">
+                              <strong>{doctor.name}</strong>
+                              <span className="muted doctor-specialty">
+                                {doctor.title} · {doctor.specialty}
+                              </span>
+                              {doctor.experience !== null && doctor.experience !== undefined && (
+                                <span className="muted doctor-specialty">
+                                  {doctor.experience} years experience
+                                </span>
+                              )}
+                            </div>
+                            <div className="doctor-actions">
+                              {doctor.availability && (
+                                <span className="doctor-availability">
+                                  Appointments: {doctor.availability}
+                                </span>
+                              )}
+                              <Link
+                                to={`/patient/appointments?hospital=${hospital.id}&department=${hospital.department.id}&doctor=${doctor.id}`}
+                                className="btn btn-outline doctor-book"
+                                data-testid="doctor-book"
+                              >
+                                Book with {doctor.name}
+                              </Link>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )}
               </div>
-
-              {hospital.phone && <p className="muted hosp-phone">Phone: {hospital.phone}</p>}
-              {hospital.availability && (
-                <p className="muted hosp-phone">Availability: {hospital.availability}</p>
-              )}
-
-              <h4 className="hosp-doctors-title">Doctors in this department</h4>
-              {hospital.doctors.length === 0 ? (
-                <p className="muted">
-                  No doctors are listed for this department yet — contact the hospital directly for
-                  details.
-                </p>
-              ) : (
-                <ul className="doctor-list">
-                  {hospital.doctors.map((doctor) => (
-                    <li className="doctor-item" key={doctor.id}>
-                      <div className="doctor-meta">
-                        <strong>{doctor.name}</strong>
-                        <span className="muted doctor-specialty">
-                          {doctor.title} · {doctor.specialty}
-                        </span>
-                        {doctor.experience !== null && doctor.experience !== undefined && (
-                          <span className="muted doctor-specialty">
-                            {doctor.experience} years experience
-                          </span>
-                        )}
-                      </div>
-                      {doctor.availability && (
-                        <span className="doctor-availability">
-                          Appointments: {doctor.availability}
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
+            );
+          })}
 
         <div className="chat-disclaimer" role="note">
           {DISCLAIMER}

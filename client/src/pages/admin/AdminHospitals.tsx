@@ -57,8 +57,31 @@ function emptyHospitalValues(): HospitalInput {
     email: '',
     website: '',
     availability: '',
+    hospitalType: '',
   };
 }
+
+// Existing hospital_type values in the database plus a few common suggestions,
+// offered as free-text datalist options in the hospital form.
+const HOSPITAL_TYPE_SUGGESTIONS = [
+  'Multispeciality Hospital',
+  'Super Speciality Hospital',
+  'Government General Hospital',
+  'Government Medical College Hospital',
+  'District Government Hospital',
+  'Government Super Speciality Hospital',
+  'Teaching Hospital',
+  'Eye Hospital',
+  'Cardiac Hospital',
+  'Cancer Centre',
+  'Dental Hospital',
+  'Orthopedic Hospital',
+  'Gastro Sciences Hospital',
+  'Maternity & Gynecology Hospital',
+  'Psychiatric Hospital',
+  'Chest Hospital',
+  'Nursing Home',
+];
 
 function emptyDepartmentValues(): { name: string; description: string } {
   return { name: '', description: '' };
@@ -95,6 +118,11 @@ export function AdminHospitalsPage() {
   const [docEditingId, setDocEditingId] = useState<string | null>(null);
   const [docEditingNew, setDocEditingNew] = useState(false);
   const [docForm, setDocForm] = useState(emptyDoctorValues());
+
+  const [search, setSearch] = useState('');
+  const [cityFilter, setCityFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [expandedHospitals, setExpandedHospitals] = useState<Set<string>>(new Set());
 
   const load = async (msg?: string) => {
     setLoading(true);
@@ -139,6 +167,7 @@ export function AdminHospitalsPage() {
       email: hospital.email ?? '',
       website: hospital.website ?? '',
       availability: hospital.availability ?? '',
+      hospitalType: hospital.hospitalType ?? '',
     });
     setNotice(null);
   };
@@ -385,6 +414,37 @@ export function AdminHospitalsPage() {
     ? hospitals?.find((h) => h.id === docHospitalId) ?? null
     : null;
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const cityOptions = Array.from(new Set((hospitals ?? []).map((h) => h.city))).sort();
+  const typeOptions = Array.from(
+    new Set((hospitals ?? []).map((h) => h.hospitalType ?? '').filter((t) => t !== '')),
+  ).sort();
+  const filteredHospitals = (hospitals ?? []).filter((hospital) => {
+    if (cityFilter !== 'all' && hospital.city !== cityFilter && hospital.district !== cityFilter) {
+      return false;
+    }
+    if (typeFilter !== 'all' && (hospital.hospitalType ?? '') !== typeFilter) return false;
+    if (normalizedSearch) {
+      const haystack = `${hospital.name} ${hospital.city} ${hospital.district ?? ''} ${
+        hospital.hospitalType ?? ''
+      }`.toLowerCase();
+      if (!haystack.includes(normalizedSearch)) return false;
+    }
+    return true;
+  });
+
+  const toggleDepartments = (hospitalId: string) => {
+    setExpandedHospitals((prev) => {
+      const next = new Set(prev);
+      if (next.has(hospitalId)) {
+        next.delete(hospitalId);
+      } else {
+        next.add(hospitalId);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="dashboard">
       <div className="dashboard-hero">
@@ -402,6 +462,65 @@ export function AdminHospitalsPage() {
         <button type="button" className="btn btn-primary" onClick={openAddHospital} disabled={busy}>
           + Add hospital
         </button>
+      </div>
+
+      <div className="admin-toolbar admin-filters">
+        <label className="admin-filter">
+          Search
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Hospital name, city or type…"
+            data-testid="hosp-search"
+          />
+        </label>
+        <label className="admin-filter">
+          City
+          <select
+            value={cityFilter}
+            onChange={(e) => setCityFilter(e.target.value)}
+            data-testid="hosp-city-filter"
+          >
+            <option value="all">All cities</option>
+            {cityOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="admin-filter">
+          Type
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            data-testid="hosp-type-filter"
+          >
+            <option value="all">All types</option>
+            {typeOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
+        {(search !== '' || cityFilter !== 'all' || typeFilter !== 'all') && (
+          <button
+            type="button"
+            className="btn btn-outline btn-small"
+            onClick={() => {
+              setSearch('');
+              setCityFilter('all');
+              setTypeFilter('all');
+            }}
+          >
+            Clear filters
+          </button>
+        )}
+        <span className="muted admin-filter-count" role="status">
+          Showing {filteredHospitals.length} of {hospitals?.length ?? 0} hospitals
+        </span>
       </div>
 
       {hospitalEditorOpen && (
@@ -492,6 +611,22 @@ export function AdminHospitalsPage() {
                 placeholder="www.hospital.example.in"
                 data-testid="hosp-website"
               />
+            </label>
+            <label className="admin-form-span">
+              Hospital type
+              <input
+                type="text"
+                list="hospital-types"
+                value={hospitalForm.hospitalType ?? ''}
+                onChange={(e) => setHospitalForm((f) => ({ ...f, hospitalType: e.target.value }))}
+                placeholder="e.g. Multispeciality Hospital"
+                data-testid="hosp-type"
+              />
+              <datalist id="hospital-types">
+                {HOSPITAL_TYPE_SUGGESTIONS.map((t) => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
             </label>
             <label className="admin-form-span">
               Availability
@@ -641,13 +776,19 @@ export function AdminHospitalsPage() {
 
       {!loading && hospitals !== null && hospitals.length === 0 && (
         <div className="alert alert-info" role="status">
-          No hospitals yet. Use "Add hospital" above to create your first one.
+          No hospitals yet. Use &quot;Add hospital&quot; above to create your first one.
+        </div>
+      )}
+
+      {!loading && hospitals !== null && filteredHospitals.length === 0 && hospitals.length > 0 && (
+        <div className="alert alert-info" role="status">
+          No hospitals match the current search or filters.
         </div>
       )}
 
       {!loading &&
         hospitals !== null &&
-        hospitals.map((hospital) => (
+        filteredHospitals.map((hospital) => (
           <div className="hosp-card admin-hosp-card" key={hospital.id} data-testid="admin-hospital">
             <div className="hosp-head">
               <div className="hosp-title">
@@ -656,6 +797,11 @@ export function AdminHospitalsPage() {
                 <p className="muted hosp-address">
                   {hospital.city} · {hospital.district ? `${hospital.district} District` : 'District not set'} · {hospital.state}
                 </p>
+              </div>
+              <div className="hosp-badges">
+                {hospital.hospitalType && (
+                  <span className="badge badge-muted">{hospital.hospitalType}</span>
+                )}
               </div>
               <div className="hosp-actions">
                 <button
@@ -687,17 +833,36 @@ export function AdminHospitalsPage() {
 
             <div className="admin-dept-header">
               <h4>Departments ({hospital.departments.length})</h4>
-              <button
-                type="button"
-                className="btn btn-outline btn-small"
-                onClick={() => openAddDepartment(hospital.id)}
-                disabled={busy}
-              >
-                + Add department
-              </button>
+              <div className="hosp-actions">
+                <button
+                  type="button"
+                  className="btn btn-outline btn-small"
+                  onClick={() => toggleDepartments(hospital.id)}
+                  aria-expanded={expandedHospitals.has(hospital.id)}
+                  data-testid="admin-dept-toggle"
+                >
+                  {expandedHospitals.has(hospital.id)
+                    ? 'Hide departments'
+                    : 'Show departments'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-small"
+                  onClick={() => openAddDepartment(hospital.id)}
+                  disabled={busy}
+                >
+                  + Add department
+                </button>
+              </div>
             </div>
 
-            {hospital.departments.length === 0 ? (
+            {!expandedHospitals.has(hospital.id) ? (
+              <p className="muted admin-dept-collapsed-note">
+                {hospital.departments.length === 0
+                  ? 'No departments yet. Add one to start listing doctors.'
+                  : 'Department list collapsed.'}
+              </p>
+            ) : hospital.departments.length === 0 ? (
               <p className="muted">No departments yet. Add one to start listing doctors.</p>
             ) : (
               <ul className="admin-dept-list">
@@ -745,6 +910,7 @@ export function AdminHospitalsPage() {
                           <li className="doctor-item" key={doctor.id}>
                             <div className="doctor-meta">
                               <strong>{doctor.name}</strong>
+                              {doctor.isDemo && <span className="badge badge-muted">Demo</span>}
                               <span className="muted doctor-specialty">
                                 {doctor.title} · {doctor.specialty}
                                 {doctor.experience !== null && doctor.experience !== undefined

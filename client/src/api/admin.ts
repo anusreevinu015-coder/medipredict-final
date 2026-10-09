@@ -1,6 +1,6 @@
 import { api } from './client';
 import type { Appointment, AppointmentStatus, Feedback } from '../types/auth';
-import type { HospitalCatalogItem, HospitalDepartment, Doctor } from '../types/hospital';
+import type { AdminDoctorRow, HospitalCatalogItem, HospitalDepartment, Doctor } from '../types/hospital';
 import type { AdminDashboardData, AdminPatientDetail, AdminPatientSummary } from '../types/admin';
 
 interface ListAppointmentsResponse {
@@ -40,6 +40,21 @@ interface ListFeedbackResponse {
   feedback: Feedback[];
 }
 
+export interface ListDoctorsResponse {
+  doctors: AdminDoctorRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  cities: string[];
+}
+
+export interface ListDoctorsParams {
+  q?: string;
+  city?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface HospitalInput {
   name: string;
   city: string;
@@ -50,6 +65,7 @@ export interface HospitalInput {
   email?: string | null;
   website?: string | null;
   availability?: string | null;
+  hospitalType?: string | null;
 }
 
 export interface DepartmentInput {
@@ -84,6 +100,17 @@ export const adminApi = {
     api.del<MessageResponse>(`/api/admin/feedback/${feedbackId}`),
 
   getHospitals: () => api.get<ListHospitalsResponse>('/api/admin/hospitals'),
+
+  getDoctors: (params?: ListDoctorsParams) => {
+    const query = new URLSearchParams();
+    if (params?.q) query.set('q', params.q);
+    if (params?.city && params.city !== 'all') query.set('city', params.city);
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.pageSize) query.set('pageSize', String(params.pageSize));
+    const qs = query.toString();
+    return api.get<ListDoctorsResponse>(`/api/admin/doctors${qs ? `?${qs}` : ''}`);
+  },
+
   addHospital: (data: HospitalInput) => api.post<HospitalResponse>('/api/admin/hospitals', data),
   updateHospital: (hospitalId: string, data: HospitalInput) =>
     api.put<HospitalResponse>(`/api/admin/hospitals/${hospitalId}`, data),

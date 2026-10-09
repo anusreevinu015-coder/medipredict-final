@@ -122,6 +122,31 @@ const SYMPTOM_SPECIALTIES: { specialty: string; keywords: string[]; labels: stri
     labels: ['anxiety or panic', 'low mood or depression', 'sleep problems or stress'],
   },
   {
+    specialty: 'Nephrology',
+    keywords: ['kidney', 'dialysis', 'swollen legs', 'swelling', 'foamy urine', 'renal'],
+    labels: ['kidney or renal concerns', 'swelling related to kidney function'],
+  },
+  {
+    specialty: 'Oncology',
+    keywords: ['cancer', 'tumor', 'tumour', 'lump', 'chemotherapy', 'mass growth'],
+    labels: ['a lump or mass', 'concerns about cancer'],
+  },
+  {
+    specialty: 'General Surgery',
+    keywords: ['hernia', 'appendicitis', 'wound', 'abscess', 'surgical', 'stitches'],
+    labels: ['hernia or appendicitis symptoms', 'a wound needing surgical review'],
+  },
+  {
+    specialty: 'Pediatrics',
+    keywords: ['child', 'children', 'baby', 'infant', 'toddler', 'newborn', 'vaccination'],
+    labels: ['symptoms in a child', 'vaccination or child health concerns'],
+  },
+  {
+    specialty: 'Dental',
+    keywords: ['toothache', 'tooth pain', 'teeth', 'tooth', 'gum', 'cavity', 'dental'],
+    labels: ['tooth pain or cavity', 'gum or dental concerns'],
+  },
+  {
     specialty: 'General Medicine',
     keywords: ['fever', 'chills', 'fatigue', 'tiredness', 'weakness', 'malaise', 'aches'],
     labels: ['fever or chills', 'fatigue or general weakness'],

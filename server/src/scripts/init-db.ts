@@ -14,15 +14,15 @@ async function initDb(): Promise<void> {
   await pool.query(schemaSql);
   console.log('[db:init] Tables created / verified. Done.');
 
-  const shouldSeed = process.argv.includes('--seed');
+  const shouldSeed = !process.argv.includes('--no-seed');
   if (shouldSeed) {
-    console.log('[db:init] --seed detected. Loading sample hospital data...');
+    console.log('[db:init] Seeding hospital, department and demo doctor data...');
     const seedSql = await readFile(seedPath, 'utf8');
     await pool.query(seedSql);
-    console.log('[db:init] Sample hospitals, departments and doctors seeded.');
+    console.log('[db:init] Hospitals, departments and demo doctors seeded.');
   } else {
     console.log(
-      '[db:init] No sample data loaded. Use "npm run db:init -- --seed" to load the optional sample hospitals for testing.',
+      '[db:init] --no-seed: hospital reference data skipped. Run "npm run db:init" without flags to load it.',
     );
   }
 

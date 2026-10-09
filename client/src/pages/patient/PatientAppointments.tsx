@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { appointmentApi } from '../../api/appointment';
 import { hospitalApi } from '../../api/hospital';
+import { readStoredLocation } from '../../components/LocationPicker';
 import type { HospitalCatalogItem } from '../../types/hospital';
 import type { Appointment, AppointmentStatus } from '../../types/auth';
 
@@ -60,7 +61,7 @@ export function PatientAppointmentsPage() {
   const [cities, setCities] = useState<string[]>([]);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
 
-  const [city, setCity] = useState('all');
+  const [city, setCity] = useState(readStoredLocation);
   const [hospitalId, setHospitalId] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [doctorId, setDoctorId] = useState('');

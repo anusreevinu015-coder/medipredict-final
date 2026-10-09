@@ -93,6 +93,33 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 CREATE INDEX IF NOT EXISTS chat_messages_user_id_idx ON chat_messages (user_id);
 CREATE INDEX IF NOT EXISTS chat_messages_created_at_idx ON chat_messages (user_id, created_at);
 
+-- Patient-selectable service locations: the Tamil Nadu cities covered by the
+-- hospital directory. latitude/longitude power "use my current location"
+-- (nearest city) matching on the client. Reference data lives in the schema so
+-- it exists even when seeding is skipped.
+CREATE TABLE IF NOT EXISTS locations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  city TEXT NOT NULL UNIQUE,
+  district TEXT NOT NULL,
+  state TEXT NOT NULL DEFAULT 'Tamil Nadu',
+  latitude DOUBLE PRECISION NOT NULL,
+  longitude DOUBLE PRECISION NOT NULL,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO locations (city, district, state, latitude, longitude, display_order) VALUES
+  ('Coimbatore', 'Coimbatore', 'Tamil Nadu', 11.0168, 76.9558, 1),
+  ('Chennai', 'Chennai', 'Tamil Nadu', 13.0827, 80.2707, 2),
+  ('Madurai', 'Madurai', 'Tamil Nadu', 9.9252, 78.1198, 3),
+  ('Tiruchirappalli', 'Tiruchirappalli', 'Tamil Nadu', 10.7905, 78.7047, 4),
+  ('Tiruppur', 'Tiruppur', 'Tamil Nadu', 11.1085, 77.3411, 5),
+  ('Salem', 'Salem', 'Tamil Nadu', 11.6643, 78.1460, 6),
+  ('Erode', 'Erode', 'Tamil Nadu', 11.3410, 77.7172, 7),
+  ('Pollachi', 'Pollachi', 'Tamil Nadu', 10.6580, 76.7734, 8)
+ON CONFLICT (city) DO NOTHING;
+
 -- Hospitals, departments and doctors used by the hospital recommendation
 -- feature. The base tables are defined here; sample/seed VALUES live in
 -- db/seed-hospitals.sql so they can be replaced with real data later.
@@ -109,6 +136,7 @@ CREATE TABLE IF NOT EXISTS hospitals (
   email TEXT,
   website TEXT,
   availability TEXT,
+  hospital_type TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (name, city)
 );
@@ -131,6 +159,9 @@ CREATE TABLE IF NOT EXISTS doctors (
   specialty TEXT NOT NULL,
   experience INTEGER,
   availability TEXT,
+  -- true when the profile is synthetic demo data (seeded) rather than a
+  -- doctor an administrator entered. NULL means "unknown / pre-existing".
+  is_demo BOOLEAN,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (hospital_id, department_id, name)
 );
@@ -145,7 +176,9 @@ ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS state TEXT NOT NULL DEFAULT 'Tami
 ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS website TEXT;
 ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS availability TEXT;
+ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS hospital_type TEXT;
 ALTER TABLE doctors ADD COLUMN IF NOT EXISTS experience INTEGER;
+ALTER TABLE doctors ADD COLUMN IF NOT EXISTS is_demo BOOLEAN;
 
 -- Creates the district index only after the column is guaranteed to exist.
 CREATE INDEX IF NOT EXISTS hospitals_district_idx ON hospitals (district);

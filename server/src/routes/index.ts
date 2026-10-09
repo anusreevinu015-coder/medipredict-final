@@ -5,12 +5,24 @@ import chatRoutes from './chat.routes.js';
 import hospitalRoutes from './hospital.routes.js';
 import adminRoutes from './admin.routes.js';
 import { requireAuth, requireRole } from '../middlewares/auth.middleware.js';
+import { asyncHandler } from '../middlewares/error.middleware.js';
+import { listServiceLocations } from '../models/hospital.model.js';
 
 const router = Router();
 
 router.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok', name: 'Medipredict API' });
 });
+
+// The eight selectable service locations (public reference data only, no
+// patient information) used by the location picker.
+router.get(
+  '/locations',
+  asyncHandler(async (_req, res) => {
+    const locations = await listServiceLocations();
+    res.status(200).json({ locations });
+  }),
+);
 
 router.get('/dashboard', requireAuth, (req, res) => {
   if (req.user?.role === 'admin') {

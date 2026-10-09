@@ -14,6 +14,7 @@ import { PatientAppointmentsPage } from './pages/patient/PatientAppointments';
 import { PatientFeedbackPage } from './pages/patient/PatientFeedback';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminHospitalsPage } from './pages/admin/AdminHospitals';
+import { AdminDoctorsPage } from './pages/admin/AdminDoctors';
 import { AdminPatientsPage } from './pages/admin/AdminPatients';
 import { NotFound } from './pages/NotFound';
 
@@ -111,6 +112,14 @@ export default function App() {
               element={
                 <ProtectedRoute role="admin">
                   <AdminHospitalsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/doctors"
+              element={
+                <ProtectedRoute role="admin">
+                  <AdminDoctorsPage />
                 </ProtectedRoute>
               }
             />

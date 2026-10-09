@@ -439,10 +439,10 @@ export function AdminDashboard() {
           <h3>Hospital management</h3>
           <p>Maintain registered hospitals, departments and their information.</p>
         </Link>
-        <Link className="feature-card" to="/admin/hospitals" data-testid="admin-manage-doctors-link">
+        <Link className="feature-card" to="/admin/doctors" data-testid="admin-manage-doctors-link">
           <span className="badge badge-active">Ready</span>
           <h3>Doctor management</h3>
-          <p>Manage doctor profiles and specialties within each hospital.</p>
+          <p>Search and manage doctor profiles across every hospital.</p>
         </Link>
       </div>
 

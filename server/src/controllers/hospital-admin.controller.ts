@@ -11,7 +11,10 @@ import {
   deleteDepartment,
   deleteDoctor,
   deleteHospital,
+  departmentExists,
+  hospitalExists,
   listAllHospitalsForAdmin,
+  listDoctorsForAdmin,
   listHospitalLocations,
   updateDepartment,
   updateDoctor,
@@ -33,6 +36,7 @@ const hospitalSchema = z.object({
   email: optionalText(200),
   website: optionalText(200),
   availability: optionalText(500),
+  hospitalType: optionalText(100),
 });
 
 const departmentSchema = z.object({
@@ -81,6 +85,7 @@ export const addHospital = asyncHandler(async (req: Request, res: Response): Pro
       email: parsed.data.email ?? null,
       website: parsed.data.website ?? null,
       availability: parsed.data.availability ?? null,
+      hospitalType: parsed.data.hospitalType ?? null,
     });
     res.status(201).json({ hospital, message: 'Hospital added successfully.' });
   } catch (err) {
@@ -110,6 +115,7 @@ export const editHospital = asyncHandler(async (req: Request, res: Response): Pr
       email: parsed.data.email ?? null,
       website: parsed.data.website ?? null,
       availability: parsed.data.availability ?? null,
+      hospitalType: parsed.data.hospitalType ?? null,
     });
     if (!hospital) {
       res.status(404).json({ message: 'Hospital not found.' });
@@ -150,8 +156,8 @@ export const addDepartment = asyncHandler(async (req: Request, res: Response): P
   }
 
   const hospitalId = req.params.id ?? '';
-  const exists = await listAllHospitalsForAdmin();
-  if (!exists.some((h) => h.id === hospitalId)) {
+  const exists = await hospitalExists(hospitalId);
+  if (!exists) {
     res.status(404).json({ message: 'Hospital not found.' });
     return;
   }
@@ -224,13 +230,11 @@ export const addDoctor = asyncHandler(async (req: Request, res: Response): Promi
   const hospitalId = req.params.id ?? '';
   const departmentId = parsed.data.departmentId;
 
-  const hospitals = await listAllHospitalsForAdmin();
-  const hospital = hospitals.find((h) => h.id === hospitalId);
-  if (!hospital) {
+  if (!(await hospitalExists(hospitalId))) {
     res.status(404).json({ message: 'Hospital not found.' });
     return;
   }
-  if (!hospital.departments.some((d) => d.id === departmentId)) {
+  if (!(await departmentExists(hospitalId, departmentId))) {
     res.status(400).json({ message: 'The department does not belong to this hospital.' });
     return;
   }
@@ -267,13 +271,11 @@ export const editDoctor = asyncHandler(async (req: Request, res: Response): Prom
 
   const hospitalId = req.params.id ?? '';
   const departmentId = parsed.data.departmentId;
-  const hospitals = await listAllHospitalsForAdmin();
-  const hospital = hospitals.find((h) => h.id === hospitalId);
-  if (!hospital) {
+  if (!(await hospitalExists(hospitalId))) {
     res.status(404).json({ message: 'Hospital not found.' });
     return;
   }
-  if (!hospital.departments.some((d) => d.id === departmentId)) {
+  if (!(await departmentExists(hospitalId, departmentId))) {
     res.status(400).json({ message: 'The department does not belong to this hospital.' });
     return;
   }
@@ -317,4 +319,32 @@ export const removeDoctor = asyncHandler(async (req: Request, res: Response): Pr
     return;
   }
   res.status(200).json({ message: 'Doctor deleted successfully.' });
+});
+
+const doctorsQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  city: z.string().trim().max(100).optional(),
+  page: z.coerce.number().int().min(1).max(10000).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(25),
+});
+
+// Flat, paginated doctor directory for the admin "Doctors" page. The full
+// directory (~1400 rows) would be wasteful to send on every visit, so it is
+// always filtered/paged here.
+export const listDoctorsAdmin = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const parsed = doctorsQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ message: parsed.error.issues[0].message });
+    return;
+  }
+
+  const { rows, total } = await listDoctorsForAdmin(parsed.data);
+  const cities = await listHospitalLocations();
+  res.status(200).json({
+    doctors: rows,
+    total,
+    page: parsed.data.page,
+    pageSize: parsed.data.pageSize,
+    cities,
+  });
 });

@@ -5,6 +5,8 @@ export interface Doctor {
   specialty: string;
   experience: number | null;
   availability: string | null;
+  /** true for seeded synthetic demo profiles; NULL means "unknown / pre-existing". */
+  isDemo?: boolean | null;
 }
 
 export interface HospitalDepartment {
@@ -24,6 +26,7 @@ export interface HospitalBase {
   email: string | null;
   website: string | null;
   availability: string | null;
+  hospitalType?: string | null;
   createdAt: string;
 }
 
@@ -38,4 +41,31 @@ export interface HospitalDepartmentWithDoctors extends HospitalDepartment {
 
 export interface HospitalCatalogItem extends HospitalBase {
   departments: HospitalDepartmentWithDoctors[];
+}
+
+/** One of the eight selectable service locations. */
+export interface ServiceLocation {
+  id: string;
+  city: string;
+  district: string;
+  state: string;
+  latitude: number;
+  longitude: number;
+  displayOrder: number;
+}
+
+/** Flat doctor row returned by the paginated admin doctor directory. */
+export interface AdminDoctorRow {
+  id: string;
+  name: string;
+  title: string;
+  specialty: string;
+  experience: number | null;
+  availability: string | null;
+  isDemo: boolean | null;
+  hospitalId: string;
+  hospitalName: string;
+  city: string;
+  departmentId: string;
+  departmentName: string;
 }
