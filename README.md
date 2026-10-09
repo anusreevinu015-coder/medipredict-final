@@ -229,3 +229,27 @@ medipredict/
 - A future phase can swap in an OpenAI-backed provider behind the existing
   `AssistantProvider` interface without touching routes, controllers, or the
   client.
+  ## Project Modules
+
+1. Patient Registration and Login
+2. AI Healthcare Chatbot
+3. Medical Report Upload and OCR Processing
+4. AI-Assisted Health Assessment
+5. Hospital and Doctor Recommendation
+6. Appointment Booking and Management
+7. Feedback and Ratings
+8. Admin Dashboard
+
+## Future Enhancements
+
+- Improve hospital information accuracy and availability.
+- Enhance healthcare assistant responses and medical report analysis.
+- Expand hospital and doctor information across Tamil Nadu.
+
+## Disclaimer
+
+This application provides preliminary, AI-assisted healthcare information and is not a substitute for professional medical advice or a confirmed diagnosis. Users should consult qualified healthcare professionals for medical concerns.
+
+## Author
+
+**Anusree V**
